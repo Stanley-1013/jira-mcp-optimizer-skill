@@ -1,10 +1,10 @@
 ---
 name: jira-mcp-optimizer
 description: |
-  Jira/Confluence MCP 最佳化工具。用於查票、建票、改狀態、Sprint 規劃、PRD 審核、進度追蹤、Git 整合。
-  包含 7 種角色（Decision Director/PRD Guide/Work Planner/Readiness Checker/Progress Tracker/Bug Assistant）、
-  Git ↔ Jira 自動化工作流、和 token 壓縮腳本。
-  Use when: 操作 Jira/Confluence、Git commit/MR 連動 Jira、角色導向任務、或提到 jira。
+  Jira/Confluence MCP 最佳化工具。用於查票、建票、改狀態、Sprint 規劃、PRD 審核、進度追蹤、風險分析、Git 整合。
+  包含 9 種角色（Decision Director/PRD Guide/Work Planner/Readiness Checker/Progress Tracker/Bug Assistant/Import Validator/Risk Analyst）、
+  Git ↔ Jira 自動化工作流、文件導入流程、和 token 壓縮腳本。
+  Use when: 操作 Jira/Confluence、Git commit/MR 連動 Jira、文件導入 Jira、風險分析、角色導向任務、或提到 jira。
 allowed-tools: Read, Glob, Grep
 ---
 
@@ -22,6 +22,12 @@ allowed-tools: Read, Glob, Grep
   - Commit/MR 帶 Jira key → 自動更新狀態
   - Bug 修復 → 更新或自動建立 Bug 單
   - Branch 命名規範 / MR 模板
+- 需要**文件導入 Jira**：
+  - PRD/需求文件 → 批量建票
+  - 導入後驗證完整性
+- 需要**風險分析**：
+  - 時程/資源/品質/範圍風險預測
+  - 高階主管風險報告
 - 需要**角色導向任務**：
   - 決策管理（DACI）→ Decision Director
   - PRD 撰寫/審核 → PRD Guide
@@ -29,6 +35,8 @@ allowed-tools: Read, Glob, Grep
   - Issue 就緒檢查 → Readiness Checker
   - 週報/進度追蹤 → Progress Tracker
   - Bug 報告審核 → Bug Report Assistant
+  - 導入驗證 → Import Validator
+  - 風險預測 → Risk Analyst
 
 ## Preconditions
 - 已完成 Jira MCP 連線與授權
@@ -103,6 +111,8 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 | 檢查 Issue 是否可開發 | Readiness Checker | references/11_ROLE_READINESS_CHECKER.md |
 | 產出週報/狀態報告 | Progress Tracker | references/12_ROLE_PROGRESS_TRACKER.md |
 | 審核 Bug 報告品質 | Bug Report Assistant | references/13_ROLE_BUG_REPORT_ASSISTANT.md |
+| 驗證導入結果完整性 | Import Validator | references/19_ROLE_IMPORT_VALIDATOR.md |
+| 專案風險預測與預警 | Risk Analyst | references/20_ROLE_RISK_ANALYST.md |
 
 ### Role 使用原則
 1. **識別任務類型**：先判斷用戶需求屬於哪種場景
@@ -120,7 +130,7 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 → 使用 Readiness Checker (11)
 
 用戶：「把這個 PRD 轉成 Jira tickets」
-→ 使用 Work Item Planner (10)
+→ 使用 Doc Import Workflow (18) + Work Item Planner (10)
 
 用戶：「審核一下這個 PRD」
 → 使用 PRD Guide (09)
@@ -130,6 +140,15 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 
 用戶：「團隊要決定用哪個方案」
 → 使用 Decision Director (07)
+
+用戶：「驗證一下導入結果對不對」
+→ 使用 Import Validator (19)
+
+用戶：「這個專案有什麼風險？」
+→ 使用 Risk Analyst (20)
+
+用戶：「給高層做個風險報告」
+→ 使用 Risk Analyst (20)
 ```
 
 ## Token Optimization
@@ -155,6 +174,7 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 - Prompts: references/05_PROMPTS.md
 - Troubleshooting: references/06_TROUBLESHOOTING.md
 - Git Integration: references/14_WORKFLOW_GIT_INTEGRATION.md
+- Doc Import: references/18_WORKFLOW_DOC_IMPORT.md
 
 ### Roles
 - references/07_ROLE_DECISION_DIRECTOR.md
@@ -164,6 +184,8 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 - references/11_ROLE_READINESS_CHECKER.md
 - references/12_ROLE_PROGRESS_TRACKER.md
 - references/13_ROLE_BUG_REPORT_ASSISTANT.md
+- references/19_ROLE_IMPORT_VALIDATOR.md
+- references/20_ROLE_RISK_ANALYST.md
 
 ## Templates
 - references/templates/issue_description_templates.md

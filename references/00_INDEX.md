@@ -15,6 +15,7 @@
 | 15_GIT_COMMIT.md | **輕量** - 只有 commit message 格式 |
 | 16_GIT_MR.md | **輕量** - 只有 MR 模板 |
 | 17_GIT_AUTOMATION.md | **輕量** - 只有自動化設置 |
+| 18_WORKFLOW_DOC_IMPORT.md | 文件導入流程 - PRD/需求文件批量導入 Jira |
 
 ## Prompts
 | File | Description |
@@ -43,6 +44,8 @@
 | 11_ROLE_READINESS_CHECKER.md | 就緒檢查器 - 評估 Issue 是否符合 Definition of Ready |
 | 12_ROLE_PROGRESS_TRACKER.md | 進度追蹤器 - 產出週報和專案狀態報告 |
 | 13_ROLE_BUG_REPORT_ASSISTANT.md | Bug 報告助手 - 審核 Bug 報告品質並提供改進建議 |
+| 19_ROLE_IMPORT_VALIDATOR.md | 導入驗證器 - 驗證批量導入結果的完整性與正確性 |
+| 20_ROLE_RISK_ANALYST.md | 風險分析師 - 專案風險預測與預警 |
 
 ## Scripts
 | Script | Description |
@@ -83,6 +86,19 @@
 | 自動化設置 | 17_GIT_AUTOMATION.md | - |
 | 完整參考 | 14_WORKFLOW_GIT_INTEGRATION.md | - |
 
+### 我要導入文件到 Jira
+1. 看 18_WORKFLOW_DOC_IMPORT.md 了解導入流程
+2. PRD Guide (09) 解析文件結構
+3. Work Item Planner (10) 分解任務
+4. 批量建票
+5. Import Validator (19) 驗證結果
+
+### 我要做風險分析
+1. 看 20_ROLE_RISK_ANALYST.md 了解風險框架
+2. 收集 Sprint/Project 數據（JQL）
+3. 識別風險指標
+4. 產出風險報告
+
 ### 我要用特定 Role
 | 場景 | Role |
 |------|------|
@@ -93,3 +109,5 @@
 | 檢查 Issue 是否可開發 | 11_ROLE_READINESS_CHECKER.md |
 | 產出週報或狀態報告 | 12_ROLE_PROGRESS_TRACKER.md |
 | 審核 Bug 報告品質 | 13_ROLE_BUG_REPORT_ASSISTANT.md |
+| 驗證導入結果 | 19_ROLE_IMPORT_VALIDATOR.md |
+| 風險預測與預警 | 20_ROLE_RISK_ANALYST.md |
