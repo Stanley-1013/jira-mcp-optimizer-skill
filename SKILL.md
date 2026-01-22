@@ -2,10 +2,12 @@
 name: jira-mcp-optimizer
 description: |
   Jira/Confluence MCP 最佳化工具。用於查票、建票、改狀態、Sprint 規劃、PRD 審核、進度追蹤、風險分析、Git 整合。
-  包含 9 種角色（Decision Director/PRD Guide/Work Planner/Readiness Checker/Progress Tracker/Bug Assistant/Import Validator/Risk Analyst）、
-  Git ↔ Jira 自動化工作流、文件導入流程、和 token 壓縮腳本。
+  包含 9 種角色、Git ↔ Jira 自動化工作流、文件導入流程、和 token 壓縮腳本。
   Use when: 操作 Jira/Confluence、Git commit/MR 連動 Jira、文件導入 Jira、風險分析、角色導向任務、或提到 jira。
-allowed-tools: Read, Glob, Grep
+allowed-tools: Read, Glob, Grep, Bash, mcp__Jira__*
+# Read/Glob/Grep: 讀取 skill 內 references 和 templates
+# Bash: 執行 scripts/*.py（壓縮/驗證/產生 payload）
+# mcp__Jira__*: 所有 Jira MCP 工具（查/建/改票、搜尋、comment、agile board 等）
 ---
 
 # Jira MCP Optimizer
@@ -18,29 +20,34 @@ allowed-tools: Read, Glob, Grep
 - 需要**直接操作 Jira**（查/建/改/留言/指派/加標籤/改狀態）
 - 需要**可追溯的工作流**（例如把 PR/bug 轉票、sprint 規劃、triage）
 - 需要**大量查詢**（JQL、批次彙整、報表雛形）
-- 需要**Git ↔ Jira 連動**：
-  - Commit/MR 帶 Jira key → 自動更新狀態
-  - Bug 修復 → 更新或自動建立 Bug 單
-  - Branch 命名規範 / MR 模板
-- 需要**文件導入 Jira**：
-  - PRD/需求文件 → 批量建票
-  - 導入後驗證完整性
-- 需要**風險分析**：
-  - 時程/資源/品質/範圍風險預測
-  - 高階主管風險報告
-- 需要**角色導向任務**：
-  - 決策管理（DACI）→ Decision Director
-  - PRD 撰寫/審核 → PRD Guide
-  - Epic 分解 → Work Item Planner
-  - Issue 就緒檢查 → Readiness Checker
-  - 週報/進度追蹤 → Progress Tracker
-  - Bug 報告審核 → Bug Report Assistant
-  - 導入驗證 → Import Validator
-  - 風險預測 → Risk Analyst
+- 需要**Git ↔ Jira 連動**（Commit/MR 帶 Jira key 自動更新狀態）
+- 需要**文件導入 Jira**（PRD/需求文件批量建票）
+- 需要**風險分析**（時程/資源/品質/範圍風險預測）
+- 需要**角色導向任務**（見 Roles 區塊）
+
+## When NOT to use
+- **純報表視覺化**：需要圖表/儀表板 → 用 Jira Dashboard 或 BI 工具
+- **即時通知**：需要 Slack/Teams 推播 → 用 Jira Automation 原生整合
+- **權限管理**：需改 Jira 專案權限 → 用 Jira Admin UI
+- **單純問 Jira 怎麼用**：概念說明 → 直接回答，不需載入 skill
+
+## Inputs / Outputs
+
+| 動作 | 輸入 | 輸出 |
+|-----|------|------|
+| 查票 | JQL / 自然語言 | Issue 清單（壓縮後） |
+| 建票 | 描述 + project + type | Issue key + 確認連結 |
+| 改票 | Issue key + 變更欄位 | diff + 回讀確認 |
+| Git 連動 | commit msg / MR | 狀態更新 + comment |
+| 文件導入 | PRD / 需求文件 | 導入報告 + Issue 清單 |
+| 風險分析 | Sprint / Project 數據 | 風險報告 + 建議行動 |
 
 ## Preconditions
-- 已完成 Jira MCP 連線與授權
-- 已知道：Jira base url、目標專案 key、常用 issue type、workflow 狀態
+1. 已完成 Jira MCP 連線與授權
+2. 已知道：Jira base url、目標專案 key、常用 issue type、workflow 狀態
+3. **首次使用健檢**：讀一張 issue 或 `list_jira_projects` 確認 200 OK 才繼續
+4. **Meta 快取**：首次或 schema 變更時，執行 fields/transitions 查詢並更新 `references/03_FIELD_SCHEMA.md`
+   - 以 projectKey 為單位；workflow/field 有改動或遇到 transition/欄位 mismatch 就重刷
 
 ## Guardrails (必遵守)
 1. **先讀再寫**：任何 update 前必先讀取 issue 目前狀態/欄位。
@@ -48,6 +55,10 @@ allowed-tools: Read, Glob, Grep
 3. **明確確認**：涉及狀態流轉、指派、刪除/關閉等不可逆操作，需在執行前列出變更摘要（diff）並等待明確指令。
 4. **限制查詢範圍**：JQL 先小範圍（project + recent + limit），必要才擴大。
 5. **避免幻想欄位**：所有欄位名稱、transition 名稱、customfield ID 一律以 `references/03_FIELD_SCHEMA.md` 與 `references/01_TOOL_MAP.md` 為準。
+6. **停止條件**：
+   - 403/401 → 停止寫入；可再讀一次 meta 確認權限缺口
+   - issue 不存在 → 停止；回報 key 錯誤
+   - transition 不存在 → 停止；列出可用 transitions 供選擇
 
 ## Quickstart (最常用 4 個流程)
 
@@ -69,38 +80,33 @@ allowed-tools: Read, Glob, Grep
 
 ### D) Git Integration：Git ↔ Jira 自動化
 
-**輕量文件（按需讀取）：**
-| 只需要 | 讀這個 |
-|-------|--------|
-| Commit 格式 | references/15_GIT_COMMIT.md |
-| MR 模板 | references/16_GIT_MR.md |
-| 自動化設置 | references/17_GIT_AUTOMATION.md |
-| 完整參考 | references/14_WORKFLOW_GIT_INTEGRATION.md |
+**Issue Key 抽取優先序**：MR title → branch name → commit message → 手動指定
 
-**腳本輔助 `scripts/git_helpers.py`：**
-```bash
-# 驗證 commit message
-python3 scripts/git_helpers.py validate "PROJ-123 feat: add feature"
-# → ✓ Valid commit message
+**SSOT — Event → Transition 對照（依專案調整）：**
 
-# 產生 branch 名稱
-python3 scripts/git_helpers.py branch PROJ-123 "add user auth" --type feature
-# → feature/PROJ-123-add-user-auth
+| Git Event | Jira Transition | 條件 |
+|-----------|-----------------|------|
+| branch 建立 | To Do → In Progress | branch 名含 issue key |
+| commit push | — | 自動加 comment |
+| MR opened | In Progress → In Review | MR title 含 issue key |
+| MR merged | In Review → Done | — |
+| MR closed (not merged) | In Review → In Progress | — |
 
-# 產生 MR description（含 Epic）
-python3 scripts/git_helpers.py mr-desc PROJ-123 --epic EPIC-45
+**輕量文件（按需讀取）：** 15_GIT_COMMIT.md / 16_GIT_MR.md / 17_GIT_AUTOMATION.md
 
-# 從文字提取 Jira keys
-python3 scripts/git_helpers.py extract-keys "Fixed PROJ-123 and BUG-456"
-# → PROJ-123, BUG-456
+**腳本輔助**：`scripts/git_helpers.py validate|branch|mr-desc|extract-keys|create-bug`
 
-# 產生建 Bug 的 payload（給 CI 用）
-python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --auto-close
+**Git E2E（最小驗證）：**
+```
+Branch: feature/PROJ-123-add-auth
+Commit: PROJ-123 feat: add auth
+MR Title: [PROJ-123] Add auth
+Expected:
+  - MR opened → PROJ-123 轉 In Review + comment 含 MR link
+  - MR merged → PROJ-123 轉 Done（回讀確認）
 ```
 
 ## Roles (角色導向任務)
-
-根據任務類型選擇對應 Role，每個 Role 有專屬 system prompt 和工作流程：
 
 | 任務場景 | Role | 文件 |
 |---------|------|------|
@@ -114,86 +120,47 @@ python3 scripts/git_helpers.py create-bug --title "Fix login" --mr-url "..." --a
 | 驗證導入結果完整性 | Import Validator | references/19_ROLE_IMPORT_VALIDATOR.md |
 | 專案風險預測與預警 | Risk Analyst | references/20_ROLE_RISK_ANALYST.md |
 
-### Role 使用原則
-1. **識別任務類型**：先判斷用戶需求屬於哪種場景
-2. **載入對應 Role**：讀取 Role 文件中的 System Prompt
-3. **遵循 Role 工作流**：按 Role 定義的步驟執行
-4. **使用 Role 模板**：輸出格式遵循 Role 的 Output Template
+**使用原則**：識別任務類型 → 載入對應 Role 文件 → 遵循 Role 工作流 → 使用 Role 模板輸出
 
-### 常見場景對應
+## E2E Example：從 PRD 到 Sprint Ready
 
 ```
-用戶：「幫我整理這週做了什麼」
-→ 使用 Progress Tracker (12)
+用戶：「把這個 PRD 轉成 Jira tickets 並確認可以開發」
 
-用戶：「這個 issue 可以開始開發嗎？」
-→ 使用 Readiness Checker (11)
+Step 1: 載入 PRD Guide (09) 解析文件結構
+Step 2: 載入 Work Item Planner (10) 分解為 Epic/Story/Task
+Step 3: 執行 Doc Import Workflow (18) 批量建票
+Step 4: 載入 Import Validator (19) 驗證導入完整性
+Step 5: 載入 Readiness Checker (11) 檢查每個 Issue 是否 Ready
 
-用戶：「把這個 PRD 轉成 Jira tickets」
-→ 使用 Doc Import Workflow (18) + Work Item Planner (10)
-
-用戶：「審核一下這個 PRD」
-→ 使用 PRD Guide (09)
-
-用戶：「這個 bug 報告寫得好嗎？」
-→ 使用 Bug Report Assistant (13)
-
-用戶：「團隊要決定用哪個方案」
-→ 使用 Decision Director (07)
-
-用戶：「驗證一下導入結果對不對」
-→ 使用 Import Validator (19)
-
-用戶：「這個專案有什麼風險？」
-→ 使用 Risk Analyst (20)
-
-用戶：「給高層做個風險報告」
-→ 使用 Risk Analyst (20)
+輸出：
+- 導入報告（X Epic, Y Stories, Z Tasks）
+- 驗證結果（通過/需修正項目）
+- Ready 檢查結果（可開發/需補資訊）
 ```
 
 ## Token Optimization
 
-### 策略
-1. **永遠不要把 Jira 原始 JSON 直接餵給 agent**：先跑 `scripts/pack_issue.py` / `scripts/pack_search.py`
-2. **預先快取「不常變」的 meta**：projects / issue types / fields / transitions
-3. **描述用模板**：description/AC/comment 使用固定模板
-4. **兩段式查詢**：先用窄 JQL 找 top 10，再針對少數 keys 做詳讀
-5. **變更前做 diff**：agent 先輸出「要改什麼」給你看
-
-## Tooling Map
-請先讀：references/01_TOOL_MAP.md
+**核心原則**：
+1. 永遠不要把 Jira 原始 JSON 直接餵給 agent → 用 `scripts/pack_*.py` 壓縮
+2. 兩段式查詢：先用窄 JQL 找 top 10，再針對少數 keys 做詳讀
+3. 變更前做 diff：agent 先輸出「要改什麼」給你看
 
 ## References
 
-### Core Documents
-- Index: references/00_INDEX.md
-- Tool Map: references/01_TOOL_MAP.md
-- JQL Cookbook: references/02_JQL_COOKBOOK.md
-- Field Schema: references/03_FIELD_SCHEMA.md
-- Workflows: references/04_WORKFLOWS.md
-- Prompts: references/05_PROMPTS.md
-- Troubleshooting: references/06_TROUBLESHOOTING.md
-- Git Integration: references/14_WORKFLOW_GIT_INTEGRATION.md
-- Doc Import: references/18_WORKFLOW_DOC_IMPORT.md
+**Core**:
+- references/00_INDEX.md
+- references/01_TOOL_MAP.md
+- references/02_JQL_COOKBOOK.md
+- references/03_FIELD_SCHEMA.md
 
-### Roles
-- references/07_ROLE_DECISION_DIRECTOR.md
-- references/08_ROLE_WORK_ORGANIZER.md
-- references/09_ROLE_PRD_GUIDE.md
-- references/10_ROLE_WORK_ITEM_PLANNER.md
-- references/11_ROLE_READINESS_CHECKER.md
-- references/12_ROLE_PROGRESS_TRACKER.md
-- references/13_ROLE_BUG_REPORT_ASSISTANT.md
-- references/19_ROLE_IMPORT_VALIDATOR.md
-- references/20_ROLE_RISK_ANALYST.md
+**Workflows**:
+- references/04_WORKFLOWS.md
+- references/14_WORKFLOW_GIT_INTEGRATION.md
+- references/18_WORKFLOW_DOC_IMPORT.md
 
-## Templates
-- references/templates/issue_description_templates.md
-- references/templates/acceptance_criteria_templates.md
-- references/templates/comment_templates.md
+**Roles**: references/07-13, 19-20（見上表）
 
-## Scripts
-- `scripts/pack_issue.py` - 壓縮單一 issue JSON
-- `scripts/pack_search.py` - 壓縮搜尋結果列表
-- `scripts/normalize_fields.py` - 轉換 customfield 為友善名稱
-- `scripts/git_helpers.py` - Git 輔助（validate/branch/mr-desc/extract-keys/create-bug）
+**Templates**: references/templates/
+
+**Scripts**: scripts/pack_issue.py | pack_search.py | normalize_fields.py | git_helpers.py
