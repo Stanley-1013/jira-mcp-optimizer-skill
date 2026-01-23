@@ -33,6 +33,7 @@
 | templates/issue_description_templates.md | Issue 描述模板（Bug/Task/Story）|
 | templates/acceptance_criteria_templates.md | 驗收標準模板 |
 | templates/comment_templates.md | 評論模板（狀態更新/問題追蹤/Review 結果）|
+| templates/dashboard_template.html | Dashboard HTML 模板（Chart.js + CSS Grid，高階主管視覺化）|
 
 ## Roles
 | File | Description |
@@ -46,6 +47,7 @@
 | 13_ROLE_BUG_REPORT_ASSISTANT.md | Bug 報告助手 - 審核 Bug 報告品質並提供改進建議 |
 | 19_ROLE_IMPORT_VALIDATOR.md | 導入驗證器 - 驗證批量導入結果的完整性與正確性 |
 | 20_ROLE_RISK_ANALYST.md | 風險分析師 - 專案風險預測與預警 |
+| 21_ROLE_DASHBOARD_BUILDER.md | 儀表板建構師 - 專案進度與風險視覺化，為高階管理層產出 HTML Dashboard |
 
 ## Scripts
 | Script | Description |
@@ -53,6 +55,7 @@
 | ../scripts/pack_issue.py | 把 Jira issue JSON 壓縮成最小上下文 Markdown |
 | ../scripts/pack_search.py | 把搜尋結果列表壓成可掃描表格 |
 | ../scripts/normalize_fields.py | 把 customfield 轉成友善名稱 |
+| ../scripts/pack_dashboard.py | 把 Jira 數據彙整為 Chart.js Dashboard HTML（含戰略分析）|
 | ../scripts/git_helpers.py | Git 輔助（validate/branch/mr-desc/create-bug）|
 
 ## Quick Navigation
@@ -99,6 +102,13 @@
 3. 識別風險指標
 4. 產出風險報告
 
+### 我要產出視覺化儀表板
+1. 看 21_ROLE_DASHBOARD_BUILDER.md 了解儀表板架構與戰略分析引擎
+2. 收集 Sprint/Project 數據（Phase A-D）
+3. Agent 產出戰略洞察（Phase E）
+4. 用 pack_dashboard.py 產出 HTML
+5. 瀏覽器開啟檢視
+
 ### 我要用特定 Role
 | 場景 | Role |
 |------|------|
@@ -111,3 +121,4 @@
 | 審核 Bug 報告品質 | 13_ROLE_BUG_REPORT_ASSISTANT.md |
 | 驗證導入結果 | 19_ROLE_IMPORT_VALIDATOR.md |
 | 風險預測與預警 | 20_ROLE_RISK_ANALYST.md |
+| 專案視覺化儀表板 | 21_ROLE_DASHBOARD_BUILDER.md |

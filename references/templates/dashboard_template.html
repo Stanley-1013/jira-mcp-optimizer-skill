@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案儀表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --blue-50: #eff6ff; --blue-500: #3b82f6; --blue-600: #2563eb; --blue-700: #1d4ed8;
+            --green-50: #f0fdf4; --green-500: #22c55e; --green-600: #16a34a; --green-700: #15803d;
+            --amber-50: #fffbeb; --amber-500: #f59e0b; --amber-600: #d97706; --amber-700: #b45309;
+            --red-50: #fef2f2; --red-500: #ef4444; --red-600: #dc2626; --red-700: #b91c1c;
+            --purple-500: #8b5cf6; --purple-600: #7c3aed;
+            --indigo-500: #6366f1; --indigo-600: #4f46e5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .header-left .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .health-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
+        }
+
+        .health-badge.healthy { background: var(--green-50); color: var(--green-700); border: 1px solid #bbf7d0; }
+        .health-badge.warning { background: var(--amber-50); color: var(--amber-700); border: 1px solid #fde68a; }
+        .health-badge.danger { background: var(--red-50); color: var(--red-700); border: 1px solid #fecaca; }
+
+        .health-badge .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .healthy .dot { background: var(--green-500); }
+        .warning .dot { background: var(--amber-500); }
+        .danger .dot { background: var(--red-500); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.85); }
+        }
+
+        /* ===== KPI Cards ===== */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .kpi-card.blue::before { background: linear-gradient(90deg, var(--blue-500), var(--indigo-500)); }
+        .kpi-card.green::before { background: linear-gradient(90deg, var(--green-500), #34d399); }
+        .kpi-card.purple::before { background: linear-gradient(90deg, var(--purple-500), var(--indigo-500)); }
+        .kpi-card.amber::before { background: linear-gradient(90deg, var(--amber-500), #fb923c); }
+        .kpi-card.red::before { background: linear-gradient(90deg, var(--red-500), #f87171); }
+
+        .kpi-card .label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .kpi-card .value {
+            font-family: 'Inter', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .kpi-card.blue .value { color: var(--blue-600); }
+        .kpi-card.green .value { color: var(--green-600); }
+        .kpi-card.purple .value { color: var(--purple-600); }
+        .kpi-card.amber .value { color: var(--amber-600); }
+        .kpi-card.red .value { color: var(--red-600); }
+
+        .kpi-card .trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .trend.improving { background: var(--green-50); color: var(--green-700); }
+        .trend.worsening { background: var(--red-50); color: var(--red-700); }
+        .trend.stable { background: #f1f5f9; color: var(--text-secondary); }
+
+        .kpi-card .sparkline {
+            position: absolute;
+            bottom: 12px; right: 16px;
+            opacity: 0.3;
+        }
+
+        /* ===== Strategic Insights Panel ===== */
+        .insights-panel {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .insights-panel h3 {
+            color: #e0e7ff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insights-panel h3::before {
+            content: '💡';
+            font-size: 1rem;
+        }
+
+        .insight-item {
+            color: #c7d2fe;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .insight-item:last-child { border-bottom: none; }
+
+        .insight-item .icon {
+            margin-right: 8px;
+        }
+
+        /* ===== Chart Grid ===== */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            animation: fadeInUp 0.6s ease-out both;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .chart-card:hover { box-shadow: var(--shadow-lg); }
+
+        .chart-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chart-card h3 .badge {
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: var(--text-secondary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-height: 280px;
+        }
+
+        /* ===== Epic Progress ===== */
+        .epics-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 28px;
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        .epics-section h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .epic-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .epic-item:last-child { margin-bottom: 0; }
+
+        .epic-name {
+            min-width: 140px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .epic-bar-container {
+            flex: 1;
+            height: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .epic-bar {
+            height: 100%;
+            border-radius: 6px;
+            background: linear-gradient(90deg, var(--blue-500), var(--indigo-500));
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0;
+        }
+
+        .epic-bar.complete { background: linear-gradient(90deg, var(--green-500), #34d399); }
+
+        .epic-pct {
+            min-width: 45px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        /* ===== Action Cards ===== */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+            animation: fadeInUp 0.6s ease-out 0.5s both;
+        }
+
+        .action-card {
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-card.immediate {
+            background: linear-gradient(135deg, var(--red-50), #fff1f2);
+            border: 1px solid #fecaca;
+        }
+        .action-card.this-week {
+            background: linear-gradient(135deg, var(--amber-50), #fef9c3);
+            border: 1px solid #fde68a;
+        }
+        .action-card.monitor {
+            background: linear-gradient(135deg, var(--green-50), #ecfdf5);
+            border: 1px solid #bbf7d0;
+        }
+
+        .action-card h4 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-card.immediate h4 { color: var(--red-700); }
+        .action-card.this-week h4 { color: var(--amber-700); }
+        .action-card.monitor h4 { color: var(--green-700); }
+
+        .action-item {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .action-item:last-child { border-bottom: none; }
+
+        .action-empty {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ===== Attention Table ===== */
+        .attention-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 28px;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        .attention-section h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .attention-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .attention-table thead th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .attention-table tbody tr {
+            background: #f8fafc;
+            border-radius: 10px;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .attention-table tbody tr:hover {
+            background: #f1f5f9;
+            transform: translateX(2px);
+        }
+
+        .attention-table td {
+            padding: 14px 12px;
+            font-size: 0.85rem;
+        }
+
+        .attention-table td:first-child {
+            border-left: 4px solid transparent;
+            border-radius: 10px 0 0 10px;
+            padding-left: 16px;
+        }
+
+        .attention-table td:last-child { border-radius: 0 10px 10px 0; }
+
+        .attention-table tr.high td:first-child { border-left-color: var(--red-500); }
+        .attention-table tr.medium td:first-child { border-left-color: var(--amber-500); }
+        .attention-table tr.low td:first-child { border-left-color: var(--blue-500); }
+
+        .impact-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .impact-badge.high { background: var(--red-50); color: var(--red-700); }
+        .impact-badge.medium { background: var(--amber-50); color: var(--amber-700); }
+        .impact-badge.low { background: var(--blue-50); color: var(--blue-700); }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+        }
+
+        .footer .confidence {
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* ===== Animations ===== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .kpi-card:nth-child(1) { animation-delay: 0s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.08s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.16s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.24s; }
+        .kpi-card:nth-child(5) { animation-delay: 0.32s; }
+
+        .chart-card:nth-child(1) { animation-delay: 0.2s; }
+        .chart-card:nth-child(2) { animation-delay: 0.3s; }
+        .chart-card:nth-child(3) { animation-delay: 0.4s; }
+        .chart-card:nth-child(4) { animation-delay: 0.5s; }
+
+        /* ===== Print ===== */
+        @media print {
+            body { background: white; }
+            .container { padding: 16px; max-width: 100%; }
+            .kpi-card, .chart-card, .epics-section, .attention-section, .action-card {
+                box-shadow: none;
+                border: 1px solid var(--border);
+                break-inside: avoid;
+            }
+            .insights-panel { background: #f1f5f9; color: var(--text-primary); }
+            .insights-panel h3, .insight-item { color: var(--text-primary); }
+            .kpi-card:hover, .chart-card:hover { transform: none; }
+            @page { margin: 1.5cm; }
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+            .actions-grid { grid-template-columns: 1fr; }
+            .kpi-card .value { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1 id="project-title">專案儀表板</h1>
+                <div class="subtitle" id="report-subtitle">載入中...</div>
+            </div>
+            <div class="health-badge" id="health-badge">
+                <span class="dot"></span>
+                <span id="health-text">--</span>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid" id="kpi-grid"></div>
+
+        <!-- Strategic Insights -->
+        <div class="insights-panel" id="insights-panel" style="display:none;">
+            <h3>戰略洞察</h3>
+            <div id="insights-list"></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>Issue 狀態分布 <span class="badge" id="active-count"></span></h3>
+                <div class="chart-wrapper"><canvas id="statusChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>速度趨勢 <span class="badge">近 6 個 Sprint</span></h3>
+                <div class="chart-wrapper"><canvas id="velocityChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>優先級分布 <span class="badge" id="priority-total"></span></h3>
+                <div class="chart-wrapper"><canvas id="priorityChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>風險雷達 <span class="badge" id="risk-avg"></span></h3>
+                <div class="chart-wrapper"><canvas id="riskChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Epic Progress -->
+        <div class="epics-section" id="epics-section" style="display:none;">
+            <h3>📊 里程碑 / Epic 進度</h3>
+            <div id="epics-list"></div>
+        </div>
+
+        <!-- Action Recommendations -->
+        <div class="actions-grid" id="actions-grid" style="display:none;"></div>
+
+        <!-- Attention Items -->
+        <div class="attention-section" id="attention-section" style="display:none;">
+            <h3>⚠️ 需要高階關注</h3>
+            <table class="attention-table">
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>摘要</th>
+                        <th>問題</th>
+                        <th>影響</th>
+                        <th>建議行動</th>
+                    </tr>
+                </thead>
+                <tbody id="attention-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div id="footer-info">由 Jira MCP Dashboard Builder 產生</div>
+            <div class="confidence" id="footer-confidence"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DATA INJECTION POINT =====
+        const DASHBOARD_DATA = /*DATA_PLACEHOLDER*/;
+
+        // ===== Render Functions =====
+
+        function getHealthLabel(level) {
+            const labels = { healthy: '健康', warning: '注意', danger: '警告' };
+            return labels[level] || level;
+        }
+
+        function getTrendInfo(direction) {
+            const map = {
+                down: { label: '↓ 改善', cls: 'improving' },
+                up: { label: '↑ 惡化', cls: 'worsening' },
+                flat: { label: '→ 持平', cls: 'stable' }
+            };
+            return map[direction] || map.flat;
+        }
+
+        function renderHeader() {
+            const { project, generated_at, date_range, health } = DASHBOARD_DATA;
+            document.getElementById('project-title').textContent =
+                `${project.name || project.key || '專案'}儀表板`;
+            document.getElementById('report-subtitle').textContent =
+                `報告日期：${generated_at?.split('T')[0] || '--'} | 資料範圍：${date_range || '--'}`;
+
+            const badge = document.getElementById('health-badge');
+            badge.className = `health-badge ${health.level}`;
+            document.getElementById('health-text').textContent =
+                `${getHealthLabel(health.level)} ${health.score}`;
+        }
+
+        function renderKPICards() {
+            const { health, delivery_probability, kpi, trends, risks } = DASHBOARD_DATA;
+            const grid = document.getElementById('kpi-grid');
+
+            const cards = [
+                {
+                    label: '專案健康度',
+                    value: health.score,
+                    suffix: '',
+                    color: health.level === 'healthy' ? 'green' : health.level === 'warning' ? 'amber' : 'red',
+                    trend: null
+                },
+                {
+                    label: '交付機率',
+                    value: delivery_probability.expected,
+                    suffix: '%',
+                    color: delivery_probability.expected >= 70 ? 'blue' : delivery_probability.expected >= 50 ? 'amber' : 'red',
+                    trend: null,
+                    sub: `樂觀 ${delivery_probability.optimistic}% | 悲觀 ${delivery_probability.pessimistic}%`
+                },
+                {
+                    label: '完成率',
+                    value: kpi.completion_rate,
+                    suffix: '%',
+                    color: 'green',
+                    trend: trends.completion
+                },
+                {
+                    label: '團隊速度',
+                    value: kpi.avg_velocity,
+                    suffix: ' SP',
+                    color: 'purple',
+                    trend: trends.velocity
+                },
+                {
+                    label: '風險指數',
+                    value: Math.round((
+                        (risks.schedule?.score || 0) +
+                        (risks.scope?.score || 0) +
+                        (risks.resource?.score || 0) +
+                        (risks.quality?.score || 0)
+                    ) / 4),
+                    suffix: '',
+                    color: 'amber',
+                    trend: null
+                }
+            ];
+
+            grid.innerHTML = cards.map(card => {
+                const trendInfo = card.trend ? getTrendInfo(card.trend.direction) : null;
+                const trendHtml = trendInfo
+                    ? `<div class="trend ${trendInfo.cls}">${trendInfo.label}</div>`
+                    : (card.sub ? `<div class="trend stable">${card.sub}</div>` : '');
+
+                return `
+                    <div class="kpi-card ${card.color}">
+                        <div class="label">${card.label}</div>
+                        <div class="value">${card.value}${card.suffix}</div>
+                        ${trendHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderInsights() {
+            const insights = DASHBOARD_DATA.strategic_insights || [];
+            if (insights.length === 0) return;
+
+            const panel = document.getElementById('insights-panel');
+            panel.style.display = 'block';
+
+            const list = document.getElementById('insights-list');
+            list.innerHTML = insights.map(insight => {
+                const icon = insight.type === 'warning' ? '⚠️' :
+                             insight.type === 'success' ? '✅' :
+                             insight.type === 'danger' ? '🚨' : '💡';
+                return `<div class="insight-item"><span class="icon">${icon}</span>${insight.text}</div>`;
+            }).join('');
+        }
+
+        function renderStatusChart() {
+            const issues = DASHBOARD_DATA.issues || {};
+            const byStatus = issues.by_status || {};
+            const labels = Object.keys(byStatus);
+            const data = Object.values(byStatus);
+
+            document.getElementById('active-count').textContent = `${issues.active || 0} 項進行中`;
+
+            const colors = ['#3b82f6', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#6366f1'];
+
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyle: 'circle' } }
+                    },
+                    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderVelocityChart() {
+            const velocity = DASHBOARD_DATA.velocity || {};
+            const sprints = velocity.sprints || [];
+            const committed = velocity.committed || [];
+            const completed = velocity.completed || [];
+            const dp = DASHBOARD_DATA.delivery_probability || {};
+
+            new Chart(document.getElementById('velocityChart'), {
+                type: 'line',
+                data: {
+                    labels: sprints,
+                    datasets: [
+                        {
+                            label: '承諾',
+                            data: committed,
+                            borderColor: '#94a3b8',
+                            backgroundColor: 'rgba(148,163,184,0.1)',
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            pointRadius: 4,
+                            pointBackgroundColor: '#94a3b8',
+                            tension: 0.3,
+                            fill: false
+                        },
+                        {
+                            label: '完成',
+                            data: completed,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.08)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#3b82f6',
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderPriorityChart() {
+            const issues = DASHBOARD_DATA.issues || {};
+            const byPriority = issues.by_priority || {};
+            const labels = Object.keys(byPriority);
+            const data = Object.values(byPriority);
+            const total = data.reduce((a, b) => a + b, 0);
+
+            document.getElementById('priority-total').textContent = `共 ${total} 項`;
+
+            const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e', '#94a3b8'];
+
+            new Chart(document.getElementById('priorityChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barThickness: 28
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+                        y: { grid: { display: false } }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderRiskChart() {
+            const risks = DASHBOARD_DATA.risks || {};
+            const labels = ['時程風險', '範圍風險', '資源風險', '品質風險'];
+            const scores = [
+                risks.schedule?.score || 0,
+                risks.scope?.score || 0,
+                risks.resource?.score || 0,
+                risks.quality?.score || 0
+            ];
+            const avg = Math.round(scores.reduce((a, b) => a + b, 0) / 4);
+
+            document.getElementById('risk-avg').textContent =
+                avg >= 80 ? '整體健康' : avg >= 60 ? '需關注' : '高風險';
+
+            // Check persistence
+            const persistence = DASHBOARD_DATA.risk_persistence || {};
+            const persistLabels = labels.map((l, i) => {
+                const cat = ['schedule', 'scope', 'resource', 'quality'][i];
+                const p = persistence[cat];
+                if (p && p.is_structural) return `${l} ⚡`;
+                if (p && p.is_persistent) return `${l} ⏳`;
+                return l;
+            });
+
+            new Chart(document.getElementById('riskChart'), {
+                type: 'radar',
+                data: {
+                    labels: persistLabels,
+                    datasets: [{
+                        label: '健康分數',
+                        data: scores,
+                        backgroundColor: 'rgba(99,102,241,0.15)',
+                        borderColor: '#6366f1',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: scores.map(s =>
+                            s >= 80 ? '#22c55e' : s >= 60 ? '#f59e0b' : '#ef4444'
+                        ),
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { stepSize: 20, display: false },
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            angleLines: { color: 'rgba(0,0,0,0.06)' },
+                            pointLabels: { font: { size: 12, weight: '500' } }
+                        }
+                    },
+                    plugins: { legend: { display: false } },
+                    animation: { duration: 1200, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderEpics() {
+            const epics = DASHBOARD_DATA.epics || [];
+            if (epics.length === 0) return;
+
+            const section = document.getElementById('epics-section');
+            section.style.display = 'block';
+
+            const list = document.getElementById('epics-list');
+            list.innerHTML = epics.map(epic => {
+                const pct = epic.total > 0 ? Math.round(epic.done / epic.total * 100) : 0;
+                const cls = pct === 100 ? 'complete' : '';
+                return `
+                    <div class="epic-item">
+                        <div class="epic-name">${epic.name}</div>
+                        <div class="epic-bar-container">
+                            <div class="epic-bar ${cls}" data-width="${pct}%"></div>
+                        </div>
+                        <div class="epic-pct">${pct}%</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Animate bars after render
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.epic-bar').forEach(bar => {
+                    bar.style.width = bar.dataset.width;
+                });
+            });
+        }
+
+        function renderActions() {
+            const actions = DASHBOARD_DATA.actions || {};
+            const { immediate = [], this_week = [], monitor = [] } = actions;
+
+            if (immediate.length === 0 && this_week.length === 0 && monitor.length === 0) return;
+
+            const grid = document.getElementById('actions-grid');
+            grid.style.display = 'grid';
+
+            grid.innerHTML = `
+                <div class="action-card immediate">
+                    <h4>🔴 立即介入</h4>
+                    ${immediate.length > 0
+                        ? immediate.map(a => `<div class="action-item">${a}</div>`).join('')
+                        : '<div class="action-empty">目前無需立即處理</div>'}
+                </div>
+                <div class="action-card this-week">
+                    <h4>🟡 本週處理</h4>
+                    ${this_week.length > 0
+                        ? this_week.map(a => `<div class="action-item">${a}</div>`).join('')
+                        : '<div class="action-empty">本週無待辦</div>'}
+                </div>
+                <div class="action-card monitor">
+                    <h4>🟢 持續觀察</h4>
+                    ${monitor.length > 0
+                        ? monitor.map(a => `<div class="action-item">${a}</div>`).join('')
+                        : '<div class="action-empty">無需特別觀察</div>'}
+                </div>
+            `;
+        }
+
+        function renderAttentionItems() {
+            const items = DASHBOARD_DATA.attention_items || [];
+            if (items.length === 0) return;
+
+            document.getElementById('attention-section').style.display = 'block';
+            const tbody = document.getElementById('attention-body');
+
+            tbody.innerHTML = items.map(item => `
+                <tr class="${item.impact || 'medium'}">
+                    <td><strong>${item.key}</strong></td>
+                    <td>${item.summary || ''}</td>
+                    <td>${item.reason || ''}</td>
+                    <td><span class="impact-badge ${item.impact || 'medium'}">${
+                        item.impact === 'high' ? '高' : item.impact === 'medium' ? '中' : '低'
+                    }</span></td>
+                    <td>${item.action || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFooter() {
+            const { generated_at, delivery_probability, project } = DASHBOARD_DATA;
+            document.getElementById('footer-info').textContent =
+                `產出時間：${generated_at || '--'} | 專案：${project?.key || '--'} | 由 Jira MCP Dashboard Builder 產生`;
+            document.getElementById('footer-confidence').textContent =
+                `交付信賴區間：樂觀 ${delivery_probability?.optimistic || '--'}% → 預期 ${delivery_probability?.expected || '--'}% → 悲觀 ${delivery_probability?.pessimistic || '--'}%`;
+        }
+
+        // ===== Initialize =====
+        function init() {
+            renderHeader();
+            renderKPICards();
+            renderInsights();
+            renderStatusChart();
+            renderVelocityChart();
+            renderPriorityChart();
+            renderRiskChart();
+            renderEpics();
+            renderActions();
+            renderAttentionItems();
+            renderFooter();
+        }
+
+        // Run when DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
