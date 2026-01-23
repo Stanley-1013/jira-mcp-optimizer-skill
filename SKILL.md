@@ -62,7 +62,12 @@ allowed-tools: Read, Glob, Grep, Bash, Write, mcp__Jira__*
 ## Guardrails (必遵守)
 1. **先讀再寫**：任何 update 前必先讀取 issue 目前狀態/欄位。
 2. **最小變更**：一次只改必要欄位；多欄位變更要分步並檢查結果。
-3. **明確確認**：涉及狀態流轉、指派、刪除/關閉等不可逆操作，需在執行前列出變更摘要（diff）並等待明確指令。
+3. **寫入前確認**：任何 Jira 寫入操作執行前，先展示摘要並等使用者確認：
+   - **改狀態/指派/關閉**：列出 diff（現狀 → 目標）
+   - **建票**：展示 payload（summary, type, priority）
+   - **Git auto-trigger**：「偵測到 PROJ-123，準備：轉 In Progress。確認？」
+   - **批量操作**：展示清單 + 總筆數
+   - 純讀取（JQL 搜尋、read issue）不需確認
 4. **限制查詢範圍**：JQL 先小範圍（project + recent + limit），必要才擴大。
 5. **避免幻想欄位**：所有欄位名稱、transition 名稱、customfield ID 一律以 `references/03_FIELD_SCHEMA.md` 與 `references/01_TOOL_MAP.md` 為準。
 6. **停止條件**：
