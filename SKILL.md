@@ -168,9 +168,13 @@ Step 5: 載入 Readiness Checker (11) 檢查每個 Issue 是否 Ready
 ## Token Optimization
 
 **核心原則**：
-1. 永遠不要把 Jira 原始 JSON 直接餵給 agent → 用 `scripts/pack_*.py` 壓縮
-2. 兩段式查詢：先用窄 JQL 找 top 10，再針對少數 keys 做詳讀
-3. 變更前做 diff：agent 先輸出「要改什麼」給你看
+1. **限制查詢範圍**：窄 JQL + 限制欄位 + top 10，再針對少數 keys 詳讀
+2. **變更前做 diff**：agent 先輸出「要改什麼」給你看
+
+**`scripts/pack_*.py` 用途說明**：
+- 將 Jira 原始資料轉為結構化摘要，用於**產出報告**或**後續多次引用**時減少重複解析
+- 單 agent 模式下，MCP 回應已進入 context，事後壓縮不節省 token
+- 若平台支援 sub-agent（如 Claude Code Task tool），可讓子 agent 查詢 + 壓縮後只回傳摘要，避免主 context 污染
 
 ## References
 
