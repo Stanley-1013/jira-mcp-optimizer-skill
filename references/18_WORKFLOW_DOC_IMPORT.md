@@ -147,16 +147,17 @@ relationships:
 {
   "projectKey": "PROJ",
   "issueType": "Story",
-  "summary": "[Import] 功能模組 A",
-  "description": "來源：PRD v1.2\n章節：2.1 功能模組 A\n\n原文：...",
-  "labels": ["imported", "prd-v1.2"],
-  "epicKey": "PROJ-100",
-  "customFields": {
-    "source_document": "PRD v1.2",
-    "source_section": "2.1"
-  }
+  "summary": "功能模組 A",
+  "description": "**來源文件**: PRD v1.2\n**來源章節**: 2.1 功能模組 A\n**導入時間**: 2024-01-15 14:30\n\n---\n\n### 原文內容\n\n[原始需求描述文字...]\n\n### 驗收標準\n\n- [ ] AC1: ...\n- [ ] AC2: ...",
+  "labels": ["imported", "prd-v1.2", "section-2.1"],
+  "epicKey": "PROJ-100"
 }
 ```
+
+**追溯欄位設計**（使用標準欄位，不依賴 customFields）：
+- `description` 開頭：來源文件、章節、導入時間（結構化 Markdown）
+- `labels`：`imported`（標記為導入）、`prd-v1.2`（版本）、`section-2.1`（章節）
+- `created` 欄位：Jira 原生自動記錄創建時間
 
 ### 批量建票腳本
 

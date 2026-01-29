@@ -144,10 +144,10 @@ Your job is to verify that document-to-Jira imports are complete, accurate, and 
 | PROJ-103 | 密碼重設流程 | [Import] 密碼重設 | ⚠️ 截斷 |
 
 ### Description 驗證
-| Issue | 包含來源引用 | 包含 AC | 狀態 |
-|-------|-------------|--------|------|
-| PROJ-102 | ✓ | ✓ | ✓ |
-| PROJ-103 | ✓ | ✗ | ⚠️ 缺 AC |
+| Issue | 包含來源文件 | 包含章節 | 包含 AC | 狀態 |
+|-------|-------------|---------|--------|------|
+| PROJ-102 | ✓ | ✓ | ✓ | ✓ |
+| PROJ-103 | ✓ | ✗ | ✗ | ⚠️ 缺章節與 AC |
 
 ### 內容問題清單
 1. PROJ-103: Summary 被截斷，原文 15 字 → 實際 10 字
@@ -158,13 +158,14 @@ Your job is to verify that document-to-Jira imports are complete, accurate, and 
 **檢查方法**:
 1. 讀取每個 Issue 的 Summary 和 Description
 2. 對照來源文件原文
-3. 檢查是否包含必要元素（來源引用、AC）
+3. 檢查 description 開頭是否包含結構化追溯資訊（**來源文件**、**來源章節**、**導入時間**）
+4. 檢查是否包含 Acceptance Criteria
 
 ---
 
 ### 4. 後設資料檢查 (Metadata)
 
-**目標**: 確認 Labels、Custom Fields 等後設資料正確
+**目標**: 確認 Labels、Description 追溯資訊等後設資料正確
 
 ```markdown
 ## 後設資料檢查
@@ -172,14 +173,14 @@ Your job is to verify that document-to-Jira imports are complete, accurate, and 
 ### Labels 驗證
 | Issue | 預期 Labels | 實際 Labels | 狀態 |
 |-------|------------|------------|------|
-| PROJ-102 | imported, prd-v1 | imported, prd-v1 | ✓ |
-| PROJ-103 | imported, prd-v1 | imported | ⚠️ 缺少 |
+| PROJ-102 | imported, prd-v1.2, section-2.1 | imported, prd-v1.2, section-2.1 | ✓ |
+| PROJ-103 | imported, prd-v1.2, section-2.3 | imported | ⚠️ 缺版本與章節標籤 |
 
-### Custom Fields 驗證
-| Issue | source_document | source_section | 狀態 |
-|-------|----------------|----------------|------|
-| PROJ-102 | PRD v1.2 | 2.1 | ✓ |
-| PROJ-103 | (空) | (空) | ❌ |
+### Description 追溯資訊驗證
+| Issue | 包含來源文件 | 包含章節 | 包含導入時間 | 狀態 |
+|-------|------------|---------|------------|------|
+| PROJ-102 | ✓ PRD v1.2 | ✓ 2.1 | ✓ | ✓ |
+| PROJ-103 | ✓ | ✗ | ✓ | ⚠️ 缺章節 |
 
 ### Issue Type 驗證
 | Issue | 預期 Type | 實際 Type | 狀態 |
@@ -187,6 +188,11 @@ Your job is to verify that document-to-Jira imports are complete, accurate, and 
 | PROJ-102 | Story | Story | ✓ |
 | PROJ-103 | Task | Bug | ❌ 錯誤 |
 ```
+
+**檢查方法**:
+1. 檢查每個 Issue 是否有 `imported` label
+2. 檢查版本標籤格式（如 `prd-v1.2`）
+3. 檢查 description 開頭是否包含結構化追溯資訊（來源文件、章節、導入時間）
 
 ---
 
@@ -288,11 +294,11 @@ labels = imported AND issuetype = Story AND "Epic Link" is EMPTY
 -- 找出孤兒 Sub-tasks
 labels = imported AND issuetype = Sub-task AND parent is EMPTY
 
--- 找出缺少特定 label 的 Issues
-labels = imported AND labels != prd-v1 AND project = PROJ
+-- 找出缺少版本標籤的 Issues（假設版本標籤格式為 prd-v*）
+labels = imported AND project = PROJ AND labels !~ "prd-v*"
 
--- 檢查 custom field 是否填寫
-labels = imported AND cf[10100] is EMPTY
+-- 找出指定版本的所有導入 Issues
+labels in (imported, prd-v1.2) AND created >= -7d
 ```
 
 ---
