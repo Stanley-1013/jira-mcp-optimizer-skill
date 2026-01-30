@@ -6,11 +6,13 @@ description: |
   Use when: 操作 Jira/Confluence、文件導入 Jira、風險分析、角色導向任務、或提到 jira。
   Auto-trigger: 當 agent 執行 git commit/push/pull/merge/checkout 且偵測到 Jira issue key（如 PROJ-123）時，
   必須自動載入此 skill 執行 Jira 同步（加 comment / 改狀態），無需使用者額外指示。
-allowed-tools: Read, Glob, Grep, Bash, Write, mcp__Jira__*
+allowed-tools: Read, Glob, Grep, Bash, Write
 # Read/Glob/Grep: 讀取 skill 內 references 和 templates
 # Bash: 執行 scripts/*.py（壓縮/驗證/產生 payload）
 # Write: Dashboard Builder (21) 產出 HTML 儀表板檔案
-# mcp__Jira__*: 所有 Jira MCP 工具（查/建/改票、搜尋、comment、agile board 等）
+#
+# 注意：Jira MCP 工具（mcp__Jira__*）需手動批准使用
+# 每次呼叫前必須先輸出來源標記，格式：【Skill: <workflow/role 名稱>】<動作描述>
 ---
 
 # Jira MCP Optimizer
@@ -60,6 +62,11 @@ allowed-tools: Read, Glob, Grep, Bash, Write, mcp__Jira__*
    - 以 projectKey 為單位；workflow/field 有改動或遇到 transition/欄位 mismatch 就重刷
 
 ## Guardrails (必遵守)
+0. **來源標記**：每次呼叫 Jira MCP 工具前，必須先輸出來源標記：
+   - 格式：`【Skill: <workflow/role 名稱>】<動作描述>`
+   - 範例：`【Skill: Doc Import】建立 Story: 功能模組 A`
+   - 範例：`【Skill: Git Automation】PROJ-123 轉 In Progress`
+   - 目的：確保流程可追蹤，方便 skill 維護
 1. **先讀再寫**：任何 update 前必先讀取 issue 目前狀態/欄位。
 2. **最小變更**：一次只改必要欄位；多欄位變更要分步並檢查結果。
 3. **寫入前確認**：任何 Jira 寫入操作執行前，先展示摘要並等使用者確認：
